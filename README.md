@@ -36,7 +36,7 @@ The SQL code for the db is in the ```database``` folder, postman collection  ```
 
 #### Get item
 
-```http
+```
   GET /transaction/:id
 ```
 
