@@ -45,7 +45,6 @@ export const getTransactionById = async (req: Request, res: Response) => {
 export const searchTransaction = async (req: Request, res: Response) => {
     let { description, filter, sort } = req.body;
     try {
-        const { period, amount, status } = filter;
         let baseQuery = `SELECT * FROM transactions_tbl WHERE user_id = $1`;
 
         if (!description && !filter && !sort) {
@@ -56,35 +55,40 @@ export const searchTransaction = async (req: Request, res: Response) => {
             baseQuery += ` AND description LIKE '%${description.toString()}%'`
         }
 
-        if (period) {
-            const { from, to } = period;
-            if (!to) {
-                baseQuery += ` AND DATE(created_at) >= '${from}'`;
+        if (filter) {
+            const { period, amount, status } = filter;
+            if (period) {
+                const { from, to } = period;
+                if (!to) {
+                    baseQuery += ` AND DATE(created_at) >= '${from}'`;
+                }
+                if (!from) {
+                    baseQuery += ` AND DATE(created_at) <= '${to}'`;
+                } if (from && to) {
+                    baseQuery += ` AND DATE(created_at) >= '${from}' AND DATE(created_at) <= '${to}'`;
+                }
             }
-            if (!from) {
-                baseQuery += ` AND DATE(created_at) <= '${to}'`;
-            } if (from && to) {
-                baseQuery += ` AND DATE(created_at) >= '${from}' AND DATE(created_at) <= '${to}'`;
+            if (amount) {
+                const { min, max } = amount;
+                if (!min) {
+                    baseQuery += ` AND amount <= '${max}'`;
+                }
+                if (!max) {
+                    baseQuery += ` AND amount >= '${min}'`;
+                } if (min && max) {
+                    baseQuery += ` AND amount >= '${min}' AND amount <= '${max}'`;
+                }
+            }
+            if (status) {
+                baseQuery += ` AND status = '${status}'`;
             }
         }
-        if (amount) {
-            const { min, max } = amount;
-            if (!min) {
-                baseQuery += ` AND amount <= '${max}'`;
-            }
-            if (!max) {
-                baseQuery += ` AND amount >= '${min}'`;
-            } if (min && max) {
-                baseQuery += ` AND amount >= '${min}' AND amount <= '${max}'`;
-            }
-        }
+
         if (sort?.by && sort?.order) {
             const { by, order } = sort;
             baseQuery += ` ORDER by ${by} ${order}`;
         }
-        if (status) {
-            baseQuery += ` AND status = '${status}'`;
-        }
+
 
         const result = (await db.query(baseQuery, [res.locals.user.id])).rows;
         return res.status(200).json(result)

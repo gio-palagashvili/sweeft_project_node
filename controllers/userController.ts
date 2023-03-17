@@ -90,6 +90,7 @@ export const recoerPasswordGen = async (req: Request, res: Response) => {
   try {
     await db.query("UPDATE users_tbl SET reset_token = $1, token_expires = $2 WHERE email = $3", [iden, time, email]);
 
+    // gmail no longer supports this function so you have to use mail.ru
     // let transporter = nodemailer.createTransport({
     //   host: 'smtp.mail.ru',
     //   port: 465,
@@ -113,7 +114,7 @@ export const recoerPasswordGen = async (req: Request, res: Response) => {
     //   }
     // });
 
-    return res.status(200).json({ message: 'send a post request to this link with this id : ${iden} | <b>http://localhost:5500/user/recover/link' });
+    return res.status(200).json({ message: `send a post request to this link with this id : '${iden}' | <b>http://localhost:5500/user/recover/link` });
     // return res.status(200).json({ message: "if the email you've entered matches with any user, you will recieve the reset link." });
 
   } catch (error: any) {
@@ -131,7 +132,7 @@ export const recoverPassword = async (req: Request, res: Response) => {
     password = await bcrypt.hash(password, salt);
 
     let now = new Date().toISOString();
-    const { rowCount } = await db.query("select * from users_tbl where reset_token = $1 and token_expires > $2", [id, now])
+    const { rowCount } = await db.query("select * from users_tbl where reset_token = $1 AND token_expires > $2", [id, now])
     if (rowCount == 0) return res.sendStatus(404);
     const update = await db.query("update users_tbl set password = $1, reset_token = null, token_expires = null where reset_token = $2 and token_expires > $3", [password, id, now]);
     if (update.rowCount == 0) return res.status(400).json({ message: "something went wron" });

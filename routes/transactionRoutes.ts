@@ -7,6 +7,5 @@ router
     .post("/create", authMiddleware, createTransaction)
     .post("/search", authMiddleware, searchTransaction)
     .get("/:id", authMiddleware, getTransactionById)
-// .delete("/:id", authMiddleware, deleteCategory)
 
 export default router;
