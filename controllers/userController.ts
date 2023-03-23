@@ -114,7 +114,7 @@ export const recoerPasswordGen = async (req: Request, res: Response) => {
     //   }
     // });
 
-    return res.status(200).json({ message: `send a post request to this link with this id : '${iden}' | <b>http://localhost:5500/user/recover/link` });
+    return res.status(200).json({ message: `your password recovery link (put request id : '${iden}' ) :  http://localhost:5500/user/recover/${iden}` });
     // return res.status(200).json({ message: "if the email you've entered matches with any user, you will recieve the reset link." });
 
   } catch (error: any) {
@@ -125,19 +125,23 @@ export const recoerPasswordGen = async (req: Request, res: Response) => {
 }
 export const recoverPassword = async (req: Request, res: Response) => {
   try {
-    let { id, password } = req.body;
-    if (!id || !password) return res.status(401).json({ message: "invalid data" });
+    let { id } = req.params;
+    let { password } = req.body;
+
+    if (!id || !password || password.length < 1) return res.status(401).json({ message: "invalid data" });
 
     const salt = await bcrypt.genSalt(10);
     password = await bcrypt.hash(password, salt);
 
     let now = new Date().toISOString();
     const { rowCount } = await db.query("select * from users_tbl where reset_token = $1 AND token_expires > $2", [id, now])
-    if (rowCount == 0) return res.sendStatus(404);
+    if (rowCount == 0) return res.status(404).json({ message: "invalid token" });
+
     const update = await db.query("update users_tbl set password = $1, reset_token = null, token_expires = null where reset_token = $2 and token_expires > $3", [password, id, now]);
-    if (update.rowCount == 0) return res.status(400).json({ message: "something went wron" });
+    if (update.rowCount == 0) return res.status(400).json({ message: "something went wrong" });
 
     return res.sendStatus(204);
+
   } catch (error: any) {
     return res.status(400).json({
       message: error.message,

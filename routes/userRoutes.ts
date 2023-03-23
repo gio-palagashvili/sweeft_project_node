@@ -7,6 +7,6 @@ router
     .post("/register", registerUser)
     .post("/login", loginUser)
     .post("/recover", recoerPasswordGen)
-    .post("/recover/link", recoverPassword)
+    .put("/recover/:id", recoverPassword)
 
 export default router;
